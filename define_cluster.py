@@ -102,7 +102,7 @@ if __name__ in "__main__":
             new_delta_header[["taxon", "new_lineage"]], right_on="taxon", left_on="Virus name", how="left",
         )
 
-    delta_blsom.to_csv(f"{DATA_DIR}/output/ALL.tsv", sep="\t")
+    delta_blsom.to_csv(f"{DATA_DIR}/ALL.tsv", sep="\t")
 
     # coordinates = delta_blsom["x y"].value_counts()
 
