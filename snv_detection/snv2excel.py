@@ -5,10 +5,10 @@ from pathlib import Path
 import os
 
 continents = [
-    # "Africa",
-    # "Europe",
-    # "North_America",
-    # "Oceania",
+    "Africa",
+    "Europe",
+    "North_America",
+    "Oceania",
     "Asia",
 ]
 
@@ -34,8 +34,3 @@ for i in continents:
         output_file=f"../{DATA_DIR}/output/{MAX_CLUSTER_NUM}/SNV_EXCEL/SNP_BASE_{i}_60_.xlsx",
         threshold=60,
     )
-    # d.extract_snv(
-    #     dir_path=f"CLUSTER/{i}",
-    #     output_file="EXTRACT_BASE/SNP_BASE_{i}_ALL.xlsx",
-    #     threshold=None,
-    # )
