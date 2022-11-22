@@ -80,20 +80,15 @@ class SnvDetector(object):
             "Original",
             "Original_Amino",
         ]
-        result_columns = columns + ["C", "Ratio", "SNV_Base", "SNV_Codon", "SMV_Amino", "同義/非同義", "置換後塩基", "SNV"]
+        result_columns = columns + ["C", "Ratio", "SNV_Base", "SNV_Codon", "SMV_Amino", "同義/非同義", "SNV"]
         total = []
-        for i, rows in result.iterrows():
+        for _, rows in result.iterrows():
             max_snv = rows[[i for i in rows.index if len(i) == 2]].astype(float)
-            BMatch = None
-            for B in SnvDetector.BASE:
-                if B in rows[f"{max_snv.idxmax()}_ALT"]:
-                    BMatch = B
-                    break
 
             element = list(rows[columns].values)
             element += [max_snv.idxmax()]
             element += list(rows[[i for i in rows.index if max_snv.idxmax() == i[:2]]].values)
-            element += [BMatch,f"{rows['Reference Seq. (MN908947.3)']}{rows['POS']}{BMatch}"]
+            element += [f"{rows['Reference Seq. (MN908947.3)']}{rows['POS']}{rows[f'{max_snv.idxmax()}_ALT']}"]
             total.append(pd.DataFrame([element], columns=result_columns))
         return pd.concat(total).reset_index(drop=True)
 
@@ -107,11 +102,22 @@ class SnvDetector(object):
 
             if len(cluster.columns[10:]) < self.cluster_threshhold:
                 continue
-
-            cluster["count"] = (cluster.iloc[:, 10:] == 1).sum(axis=1)
+            
+            # クラスタでSNVが起こっている株
+            # cluster["count"] = (cluster.iloc[:, 10:] == 1).sum(axis=1)
+            # クラスタの全株数
             cluster["total"] = cluster.iloc[:, 10:].count(axis=1)
-            cluster[f"C{cluster_num}"] = cluster["count"] * 100 / cluster["total"]
-            cluster[f"C{cluster_num}_ALT"] = cluster["ALT"]
+            # クラスタでSNVが起こっている株/クラスタの全株数
+            # cluster[f"C{cluster_num}"] = cluster["count"] * 100 / cluster["total"]
+            cluster[f"C{cluster_num}"] = (cluster.iloc[:, 10:] == 1).sum(axis=1) * 100  / cluster["total"]
+            cluster[f"C{cluster_num}_ALT"] = cluster["ALT"].apply(lambda x: x.split(",")[0])
+
+            # cluster[f"C{cluster_num}_ALT"] = cluster["ALT"]
+            # cluster[f"C{cluster_num}_ALT1"] = (cluster.iloc[:, 10:] == 1).sum(axis=1)
+            # cluster[f"C{cluster_num}_ALT2"] = (cluster.iloc[:, 10:] == 2).sum(axis=1)
+            # cluster[f"C{cluster_num}_ALT1(%)"] = (cluster.iloc[:, 10:] == 1).sum(axis=1) * 100  / cluster["total"]
+            # cluster[f"C{cluster_num}_ALT2(%)"] = (cluster.iloc[:, 10:] == 2).sum(axis=1) * 100  / cluster["total"]
+
             base = base.merge(
                 cluster[["POS", f"C{cluster_num}", f"C{cluster_num}_ALT"]], left_on="POS", right_on="POS", how="outer",
             )
@@ -145,7 +151,7 @@ class SnvDetector(object):
             re.search(r"(?<=C)\d{1,2}", i).group() for i in base.columns if len(i.split("_")) < 2 and i[0] == "C"
         ]
         base = base.dropna(subset=["遺伝子アミノ酸位置"])
-        params = [(base[["POS", "Reference Seq. (MN908947.3)", f"C{c_num}_ALT"]].values, c_num) for _, c_num in enumerate(c_nums)]
+        params = [(base[["POS", "Reference Seq. (MN908947.3)", f"C{c_num}_ALT", "遺伝子アミノ酸位置", "遺伝子名：重複部位は後者の方を優先している(ORF7a/7b)"]].values, c_num) for _, c_num in enumerate(c_nums)]
         with ProcessPoolExecutor(max_workers=len(c_nums)) as executor:
             # print(f"CLUSTER{c_num}")
             results = executor.map(self._extract_codon, params)
@@ -174,38 +180,44 @@ class SnvDetector(object):
             """SNV塩基を元の塩基と置換する"""
             list_codon = list(codon)
             list_snp_codon = list(snv_codon)
-            list_codon[codon_pos] = list_snp_codon[codon_pos]
+            list_codon[2-codon_pos] = list_snp_codon[2-codon_pos]
             amino = codon_table_v2[codon]
-            snp_amino = codon_table_v2["".join(list_codon)]
+            snp_amino = ""
+            if "".join(list_codon) in codon_table_v2:
+                snp_amino = codon_table_v2["".join(list_codon)]
+                
             if amino == snp_amino:
                 synonymous_codon = "同義コドン"
             else:
                 synonymous_codon = "非同義コドン"
 
             return pd.DataFrame(
-                [[Pos - (codon_pos - 2), codon, "".join(list_codon), amino, snp_amino, synonymous_codon,]]
+                [[Pos - codon_pos, codon, "".join(list_codon), amino, snp_amino, synonymous_codon,]]
+                # [[Pos - (codon_pos - 2), codon, "".join(list_codon), amino, snp_amino, synonymous_codon,]]
             )
 
         base_values, c_num = params
         codon = ""
         snv_codon = ""
         adding_snv = []
-        BASE = ["A", "T", "G", "C"]
-        
-        for Pos, RefSeq, CnumALT in tqdm(base_values):
+        BASE = ["A", "T", "G", "C", "*"]
+        PreProtein = None
+        for Pos, RefSeq, CnumALT, BasePos, Protein in tqdm(base_values):
+            if BasePos != "-":
+            # if PreProtein != Protein:
+                codon = ""
+                snv_codon = "" 
+
             codon += RefSeq
-            flag = True
             if CnumALT is not np.nan and type(CnumALT) != float:
-                    for B in BASE:
-                        if B in CnumALT:
-                            snv_codon += B
-                            flag = False
-                            break
-            if flag:
+                snv_codon += CnumALT
+            else:
                 snv_codon += RefSeq
 
-            if len(snv_codon) >= 3:
-
+            if len(codon) >= 3:
+                # if "112" in str(Pos):
+                #     print(Pos, codon, snv_codon)
+                # print(codon, snv_codon)
                 new_snv0 = _substitute_snv_base(Pos, codon, snv_codon, 0)
                 new_snv1 = _substitute_snv_base(Pos, codon, snv_codon, 1)
                 new_snv2 = _substitute_snv_base(Pos, codon, snv_codon, 2)
@@ -215,6 +227,7 @@ class SnvDetector(object):
 
                 codon = ""
                 snv_codon = ""
+            PreProtein = Protein
         adding_snv = pd.concat(adding_snv)
         adding_snv = adding_snv.reset_index(drop=True)
         adding_snv.columns = [

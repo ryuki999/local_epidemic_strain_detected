@@ -79,11 +79,11 @@ class CreateOmicronHeaderDF(object):
         if self.weight_file is not None:
             # weightファイルの読み込み
             blsom_weight = weight_file2df(filepath=self.weight_file)
+            self.blsom_weight = blsom_weight
 
         self.delta_blsom = delta_blsom
         self.X = X
         self.Y = Y
-        self.blsom_weight = blsom_weight
 
 
 class ShowImage(object):
