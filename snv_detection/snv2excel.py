@@ -24,13 +24,14 @@ for i in continents:
 
     # cluster_threshhold = 50
     cluster_threshhold = 0
-    d = SnvDetector(cluster_threshhold=cluster_threshhold)
+    d = SnvDetector(
+        dir_path=f"../{DATA_DIR}/SNV/{MAX_CLUSTER_NUM}/CLUSTER/{i}",
+        output_file=f"../{DATA_DIR}/output/{MAX_CLUSTER_NUM}/SNV_EXCEL/SNP_BASE_{i}_60_.xlsx",
+        cluster_threshhold=cluster_threshhold)
 
     d.extract_snv(
         # dir_path=f"CLUSTER/{i}",
         # output_file=f"TEST_MEAN/SNP_BASE_{i}_60.xlsx",
         # threshold=60,
-        dir_path=f"../{DATA_DIR}/SNV/{MAX_CLUSTER_NUM}/CLUSTER/{i}",
-        output_file=f"../{DATA_DIR}/output/{MAX_CLUSTER_NUM}/SNV_EXCEL/SNP_BASE_{i}_60_.xlsx",
-        threshold=60,
+        threshhold=60,
     )

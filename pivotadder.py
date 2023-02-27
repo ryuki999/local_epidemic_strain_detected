@@ -148,10 +148,17 @@ class Omicron2201PivotAdder(object):
 
         return pd.Series(cluster_sum, name="Total")
 
-    def _search_threshhold(self, pivot):
+    def _search_threshhold(self, pivot, target):
         match_cluster_nums, total_cluster_nums, extraction_ratios = [], [], []
+        if target == "country":
+            columns = ["Total", "country2"]
+        elif target == "lineage":
+            columns = ["Total", "new_lineage2"]
+        elif target == "country-lineage":
+            columns = ["Total", "cluster", "lineage2", "new_lineage2"]
+
         for threshhold in self.threshholds:
-            count = sum([sum(values.drop(["Total", "cluster", "lineage2", "new_lineage2"]) / values["Total"] >= threshhold) for (_, values) in pivot.iterrows()])
+            count = sum([sum(values.drop(columns) / values["Total"] >= threshhold) for (_, values) in pivot.iterrows()])
             total = len(pivot.reset_index()["labels"].unique())
 
             match_cluster_nums += [count]
@@ -259,9 +266,17 @@ class Omicron2201PivotAdder(object):
         # pivot2.to_excel(writer, sheet_name="new_lineage-country", encoding="utf-8")
         pivot2.style.apply(self.highlight_occupy_lineage_country, axis=1).to_excel(writer, sheet_name="new_lineage-country", encoding="utf-8")
 
+        # countryの閾値探索
+        result = self._search_threshhold(new_lineage, target="lineage")
+        result.to_excel(writer, sheet_name="lineage_threshhold", encoding="utf-8")
+
+        # lineageの閾値探索
+        result = self._search_threshhold(country, target="country")
+        result.to_excel(writer, sheet_name="country_threshhold", encoding="utf-8")
+
         # pivot2の閾値探索
-        result = self._search_threshhold(pivot2)
-        result.to_excel(writer, sheet_name="search_threshhold", encoding="utf-8")
+        result = self._search_threshhold(pivot2, target="country-lineage")
+        result.to_excel(writer, sheet_name="threshhold", encoding="utf-8")
 
         # pivot2のデータ件数と閾値探索
         result = self._search_data_count_and_threshhold(pivot2)

@@ -23,6 +23,9 @@ FASTA_FILE = f"../{DATA_DIR}/ReceivedData/dataToFurukawa/Omicron.meta.id.fas.N1"
 LOGGER = get_logger(f"../{DATA_DIR}/split_fas")
 LOGGER.info(f"{DATA_DIR} CLUSTER_MAC: {MAX_CLUSTER_NUM} CONTINENT: {CONTINENT}")
 
+# MAX_CLUSTER_ID = 10
+MAX_CLUSTER_ID = 10**6
+
 START_TIME = time.time()
 
 
@@ -35,8 +38,9 @@ header = pd.read_csv(HEADER, sep="\t")
 
 cluster_and_id = cluster_and_id.merge(header, left_on="Accession ID", right_on="Accession ID")
 # print(cluster_and_id)
+max_cluster_id = min(MAX_CLUSTER_ID, max(cluster_and_id["labels"].values) + 1)
 cluster_id = []
-for i in range(0, max(cluster_and_id["labels"].values) + 1):
+for i in range(0, max_cluster_id):
     cluster_id.append(cluster_and_id[cluster_and_id["labels"] == i]["Virus name"].values)
 
 # print(cluster_id)
@@ -62,7 +66,8 @@ def create_file(params):
     return
 
 # 並列処理
-with ProcessPoolExecutor(max_workers=len(cluster_id)) as executor:
+max_workers = min(12, len(cluster_id))
+with ProcessPoolExecutor(max_workers=max_workers) as executor:
     params = enumerate(cluster_id)
     results = executor.map(create_file, params)
 

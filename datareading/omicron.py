@@ -78,7 +78,8 @@ class CreateOmicronHeaderDF(object):
 
         if self.weight_file is not None:
             # weightファイルの読み込み
-            blsom_weight = weight_file2df(filepath=self.weight_file)
+            blsom_weight = pd.DataFrame(weight_file2df(filepath=self.weight_file)).T
+            blsom_weight.columns = [f"w{i}" for i in blsom_weight.columns]
             self.blsom_weight = blsom_weight
 
         self.delta_blsom = delta_blsom
@@ -86,16 +87,38 @@ class CreateOmicronHeaderDF(object):
         self.Y = Y
 
 
-class ShowImage(object):
-    def __init__(self, x, y, dataframe=None):
-        self.dataframe = dataframe
+class Show2DImage(object):
+    def __init__(self, x, y, rgb_color, df=None):
+        self.df = df
         self.x = x
         self.y = y
+        self.rgb_color = rgb_color
+
+    def plot(self, title, target, output_file):
+        plt.figure(figsize=(12, 8))
+        img = blsom_all_plot(self.df, rgb_color=self.rgb_color, target=target)
+        # plt.subplot(6, 8, num) # subplot(m, n, p): mは行, nは列, pは位置 → mは2や3だと上下離れてしまうので5にしています
+        # plt.title(f"{con[:4]}+{mon}")
+        plt.title(title)
+        plt.xlim(0, self.x)
+        plt.ylim(self.y, 0)
+        if img is not None:
+            plt.imshow(img)
+        else:
+            plt.imshow(np.full((self.x + 1, self.y + 1, 3), [255, 255, 255]))
+        plt.savefig(output_file)
+
+class Show3DImage(object):
+    def __init__(self, x, y, rgb_color, df=None):
+        self.df = df
+        self.x = x
+        self.y = y
+        self.rgb_color = rgb_color
 
     def show_color_by_continent(self):
         target = "continent"
         plt.figure(figsize=(12, 8))
-        img = blsom_all_plot(self.dataframe, target=target)
+        img = blsom_all_plot(self.df, target=target)
         #     plt.subplot(3, 2, i+1)
         #     ax = plt.gca()
         #     ax.axes.xaxis.set_visible(False)
@@ -110,20 +133,7 @@ class ShowImage(object):
         plt.savefig(f"test.png")
         # plt.clf()
 
-    def create_img(self):
-        target = "continent"
-        plt.figure(figsize=(12, 8))
-        img = blsom_all_plot(self.dataframe, target=target)
-        # plt.subplot(6, 8, num) # subplot(m, n, p): mは行, nは列, pは位置 → mは2や3だと上下離れてしまうので5にしています
-        # plt.title(f"{con[:4]}+{mon}")
-        plt.xlim(0, self.x)
-        plt.ylim(self.y, 0)
-        if img is not None:
-            plt.imshow(img)
-        else:
-            plt.imshow(np.full((self.x + 1, self.y + 1, 3), [255, 255, 255]))
-
-    def blsom_plot_3d(self, data, output_file):
+    def plot(self, title, target, output_file):
         continent_color = {
             "Europe": "#FF1234",
             "North_America": "#00FF00",
@@ -134,12 +144,12 @@ class ShowImage(object):
         }
         #     plt.figure(figsize=(124, 96))
         cor_count = {}
-        for i in data.index:
-        # for i in tqdm(data.index):
-            key = f"{data['x'][i]} {data['y'][i]}"
+        for i in self.df.index:
+        # for i in tqdm(self.df.index):
+            key = f"{self.df['x'][i]} {self.df['y'][i]}"
             if key not in cor_count:
                 cor_count[key] = defaultdict(int)
-            cor_count[key][data["continent"][i]] += 1
+            cor_count[key][self.df[target][i]] += 1
 
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection="3d")
@@ -157,7 +167,7 @@ class ShowImage(object):
                     dx=0.5,
                     dy=0.5,
                     dz=-(cor_count[i][j[0]] - height),
-                    color=continent_color[j[0]],
+                    color=self.rgb_color[j[0]].hex,
                 )
                 height = cor_count[i][j[0]]
 
@@ -168,6 +178,6 @@ class ShowImage(object):
         # ax.set_zlabel("  #Seqs", rotation=0, fontsize=12)
         ax.set_xlim(0, self.x)
         ax.set_ylim(self.y, 0)
-        #     plt.title(output_file.stem)
+        plt.title(title)
         # ax.set_zlim(0, 400)
         plt.savefig(output_file)
