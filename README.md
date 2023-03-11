@@ -50,7 +50,7 @@ nohup python define_cluster.py &
 
 パラメータは以下を変更する。
 ```
-MAX_CLUSTER_NUM = 10 # 10/50/100/200/300
+MAX_CLUSTER_NUM = 50 # 10/50/100/200/300
 DATA_DIR = "omicron2201" # omicron2201/omicron2211
 ```
 
@@ -69,7 +69,7 @@ nohup python define_cluster_kmeans.py &
 
 パラメータは以下を変更する。
 ```
-MAX_CLUSTER_NUM = 10 # 10/50/100/200/300
+MAX_CLUSTER_NUM = 50 # 10/50/100/200/300
 DATA_DIR = "omicron2201" # omicron2201/omicron2211
 ```
 
@@ -107,19 +107,19 @@ sh detection_snp.sh
 python snv2excel.py
 ```
 
-このとき，`split_cluster.sh`ファイル内のpython scriptを実行する部分で，第一引数に解析対象データのあるフォルダ(omicron2201)を指定し，第二引数にクラスタ定義数(50)をする.
+このとき，`split_cluster.sh`ファイル内のpython scriptを実行する部分で，第一引数に解析対象データのあるフォルダ(omicron2201)を指定し，第二引数にクラスタ定義数(50)をする.また，第三引数では大陸名が指定される.
 ```
 python split_cluster_fas.py omicron2201 50 ${i}
 ```
 
-`detection_snp.sh`では，解析対象データのフォルダ(omicron2201)を指定し，クラスタ定義数(MAX_CLUSTER_NUM)を指定する.また，これは`snv2excel.py`でも同様の指定を行う.
+`detection_snp.sh`では，解析対象データのフォルダ(DATA_DIR)を指定し，クラスタ定義数(MAX_CLUSTER_NUM)を指定する.また，これは`snv2excel.py`でも同様の指定を行う.
 ```
 DATA_DIR=omicron2201
 MAX_CLUSTER_NUM=50
 ```
 
 * 生成物
-  * `omicron2201/output/10/SNV_EXCEL`以下にexcelファイルが出力される
+  * `omicron2201/output/50/SNV_EXCEL`以下にexcelファイルが出力される
 
 
 
