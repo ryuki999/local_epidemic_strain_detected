@@ -29,7 +29,7 @@
 ## 解析対象データの詳細とフォルダの形式統一
 * omicron2201が解析対象データにあたる(ReceivedData)
 * fasta/blsomのoutファイル/データMetaファイルのフォーマット統一
-* 生成物はすべてoutputフォルダにを格納
+* 生成物はすべてoutputフォルダに格納
 
 ## BLSOMのプロットと画像化
 `220216_cluster_defination.ipynb`を上からパラメータを変えて実行
