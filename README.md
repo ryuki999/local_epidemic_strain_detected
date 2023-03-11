@@ -20,7 +20,7 @@
 ├── omicron2201
 │   ├── ReceivedData # 解析データ
 │   ├── SNV # クラスタ別SNV *.al / *.outputファイル
-│   ├── output # クラスタ定義結果
+│   ├── output # ユーザが確認する解析結果
 ├── snv_detection # SNV検出に関するファイル群
 └── utils # ログ出力用間数群
 └── # mainファイル群
@@ -29,15 +29,15 @@
 ## 解析対象データの詳細とフォルダの形式統一
 * omicron2201が解析対象データにあたる(ReceivedData)
 * fasta/blsomのoutファイル/データMetaファイルのフォーマット統一
-* 生成物はすべてoutputフォルダに格納
+* ユーザが確認する解析結果はすべてoutputフォルダに格納
 
 ## BLSOMのプロットと画像化
-`220216_cluster_defination.ipynb`を上からパラメータを変えて実行
+`220216_cluster_defination.ipynb`を上から，必要に応じてパラメータを変えて実行
 * 生成物
-  * `omicron2201/output_kmeans3_1bycluster/images`以下に全大陸データプロット結果と大陸別データプロット結果の図が出力される
+  * `omicron2201/output/images`以下に全大陸データプロット結果と大陸別データプロット結果の図が出力される
 
 ## クラスタ定義
-### 類似度マニュアル指定
+### BLSOMの重みを手動閾値でフィルタリング / ±3
 * 定義方法
   * 学習されたBLSOMに大陸別にデータを分類し，格子点中のデータ件数の多い上位n件をクラスタの中心点の候補とする.
   * 中心点の候補と，各大陸のデータが分類されている格子点との距離を計算し，0.5σ以下の距離かつ中心点から±5の範囲の格子点をクラスタとして定義する.このとき，重なりのあるクラスタは統合させる.
@@ -105,6 +105,17 @@ DATA_DIR = "omicron2201" # omicron2201/omicron2211
 sh split_cluster.sh
 sh detection_snp.sh
 python snv2excel.py
+```
+
+このとき，`split_cluster.sh`ファイル内のpython scriptを実行する部分で，第一引数に解析対象データのあるフォルダ(omicron2201)を指定し，第二引数にクラスタ定義数(50)をする.
+```
+python split_cluster_fas.py omicron2201 50 ${i}
+```
+
+`detection_snp.sh`では，解析対象データのフォルダ(omicron2201)を指定し，クラスタ定義数(MAX_CLUSTER_NUM)を指定する.また，これは`snv2excel.py`でも同様の指定を行う.
+```
+DATA_DIR=omicron2201
+MAX_CLUSTER_NUM=50
 ```
 
 * 生成物
