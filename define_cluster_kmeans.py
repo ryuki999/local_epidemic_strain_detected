@@ -14,7 +14,7 @@ warnings.simplefilter('ignore')
 
 from utils.utils import get_logger
 
-from cluster_definition.cluster_definer import KmeansClusterDefiner, KmeansTotalClusterDefiner
+from cluster_definition.cluster_definer import KmeansClusterDefiner
 from datareading.omicron import CreateOmicronHeaderDF, Show3DImage, Show2DImage
 
 
@@ -62,7 +62,6 @@ if __name__ in "__main__":
         out_filename=filename,
         meta_filename=file,
         weight_file=f"{DATA_DIR}/ReceivedData/SOM/weight.100",
-        # weight_file=f"{DATA_DIR}/ReceivedData/SOM/weight.100",
     )
     createdf.create_df()
 
@@ -71,7 +70,6 @@ if __name__ in "__main__":
     Y = createdf.Y
 
     if COMPARE_PASSED:
-        # ShowImage(delta_blsom, X, Y).show_color_by_continent()
         new_lin_file = f"{DATA_DIR}/ReceivedData/dataToFurukawa/Omicron.meta.id.fas.N1.lin"
 
         new_delta_header = pd.read_csv(new_lin_file, sep="\t")
@@ -83,6 +81,8 @@ if __name__ in "__main__":
             left_on="Virus name",
             how="left",
         )
+
+    delta_blsom.to_csv(f"{DATA_DIR}/ALL.tsv", sep="\t")
 
     delta_blsom = delta_blsom.merge(createdf.blsom_weight, right_index=True, left_on=["x y"])
 
@@ -99,12 +99,11 @@ if __name__ in "__main__":
 
 
     # 全部の重み
-    definer = KmeansTotalClusterDefiner(n_clusters=MAX_CLUSTER_NUM, cluster_range=5)
-    # definer = KmeansClusterDefiner(n_clusters=MAX_CLUSTER_NUM, cluster_range=5)
+    definer = KmeansClusterDefiner(n_clusters=MAX_CLUSTER_NUM, cluster_range=5)
     w_cluster = definer.df2cluster(delta_blsom, createdf.blsom_weight)
 
     classes = sorted(w_cluster["labels"].unique())
-    # plot(shower=Show2DImage, df=w_cluster, classes=classes, target="kmeans_labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/Cluster2D.png")
+    plot(shower=Show2DImage, df=w_cluster, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/Cluster2D.png")
 
     continents = ["Europe", "North_America", "Asia", "Oceania"]
     for con in continents:
@@ -114,19 +113,19 @@ if __name__ in "__main__":
             os.mkdir(Path(f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/3D"))
 
         df = delta_blsom[delta_blsom["continent"] == con]
-        definer = KmeansTotalClusterDefiner(n_clusters=MAX_CLUSTER_NUM, cluster_range=3)
-        # definer = KmeansClusterDefiner(n_clusters=MAX_CLUSTER_NUM, cluster_range=3)
+        definer = KmeansClusterDefiner(n_clusters=MAX_CLUSTER_NUM, cluster_range=3)
         w_cluster = definer.df2cluster(df, createdf.blsom_weight)
-        # plot(shower=Show2DImage, df=w_cluster, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/Cluster2D_origin.png")
+        plot(shower=Show2DImage, df=w_cluster, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/Cluster2D_origin.png")
+
         w_cluster_5 = definer.extract_certain_range()
         print(sum(w_cluster_5["labels"].value_counts()))
-        # plot(shower=Show2DImage, df=w_cluster_5, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/Cluster2D.png")
+        plot(shower=Show2DImage, df=w_cluster_5, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/Cluster2D.png")
 
 
         for i in w_cluster_5["labels"].unique():
             by3d = w_cluster_5[w_cluster_5["labels"] == i]
-            # plot(shower=Show3DImage, df=by3d, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/3D/{i}.png")
-            # plot(shower=Show2DImage, df=by3d, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/2D/{i}.png")
+            plot(shower=Show3DImage, df=by3d, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/3D/{i}.png")
+            plot(shower=Show2DImage, df=by3d, classes=classes, target="labels", x=X, y=Y, output_file=f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/images/cluster/{con}/2D/{i}.png")
         
         w_cluster_5 = w_cluster_5.drop(columns=[i for i in w_cluster_5.columns if "w" == str(i)[0]])
         w_cluster_5.to_csv(f"{DATA_DIR}/output/{MAX_CLUSTER_NUM}/ANALYTICS_CLUSTER/{con}.tsv", sep="\t")

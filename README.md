@@ -93,7 +93,7 @@ DATA_DIR = "omicron2201" # omicron2201/omicron2211
 ```
 
 ### クラスタ定義結果の集計ファイルの出力
-`arrange_data.ipynb`を上から実行する
+`cluster_analysis.ipynb`を上から実行する
 
 * 生成物
   * omicron2201/output以下にクラスタ定義結果が出力される
